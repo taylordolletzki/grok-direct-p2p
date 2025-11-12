@@ -1,7 +1,5 @@
 from flask import Flask, request, jsonify
 from flask_socketio import SocketIO, emit
-import json
-import threading
 
 app = Flask(__name__)
 socketio = SocketIO(app)
@@ -32,4 +30,4 @@ def connect_listener(data):
         emit('error', {'msg': 'Track not found'})
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=5000)
+    socketio.run(app, host='0.0.0.0', port=5000, allow_unsafe_werkzeug=True)  # Temporary fix for Render; replace with Gunicorn for production
