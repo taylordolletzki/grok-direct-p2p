@@ -3,6 +3,7 @@ import hashlib
 import os
 import qrcode
 import platform
+import requests  # NEW: for publishing to relay
 from datetime import datetime
 
 LIBRARY_FILE = "library.json"
@@ -76,7 +77,18 @@ def add_track():
     library[track_id] = manifest
     save_library()
 
-    # REAL RELAY URL
+    # PUBLISH TO YOUR REAL RELAY
+    relay_url = "https://grok-relay.onrender.com/publish"
+    try:
+        response = requests.post(relay_url, json=manifest)
+        if response.status_code == 200:
+            print("Manifest published to relay!")
+        else:
+            print(f"Relay publish failed: {response.status_code}")
+    except Exception as e:
+        print(f"Relay unreachable (normal for now): {e}")
+
+    # QR (overwrites same file)
     qr_text = f"UP:grok-relay.onrender.com/pay?track={track_id}&usd={price_usd}"
     qr = qrcode.make(qr_text)
     qr_path = f"{track_id}_qr.png"
@@ -99,7 +111,19 @@ def edit_track():
         save_library()
         print(f"Price updated to ${new_price}!")
 
-        # REAL RELAY URL + OVERWRITE SAME FILE
+        # PUBLISH UPDATED MANIFEST TO RELAY
+        relay_url = "https://grok-relay.onrender.com/publish"
+        updated_manifest = library[track_id]
+        try:
+            response = requests.post(relay_url, json=updated_manifest)
+            if response.status_code == 200:
+                print("Updated manifest published to relay!")
+            else:
+                print(f"Relay publish failed: {response.status_code}")
+        except Exception as e:
+            print(f"Relay unreachable: {e}")
+
+        # REGENERATE QR (overwrites same file)
         qr_text = f"UP:grok-relay.onrender.com/pay?track={track_id}&usd={new_price}"
         qr = qrcode.make(qr_text)
         qr_path = f"{track_id}_qr.png"
@@ -107,7 +131,7 @@ def edit_track():
         print(f"New QR generated: {qr_path} – opening now!")
         open_qr(qr_path)
     else:
-        print and "Price unchanged."
+        print("Price unchanged.")
 
 def delete_track():
     track_id = input("Enter track_id to DELETE forever: ")
