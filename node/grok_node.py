@@ -19,11 +19,11 @@ def save_library():
 def open_qr(qr_path):
     system = platform.system()
     if system == "Darwin":  # macOS
-        os.system(f"open {qr_path}")
+        os.system(f'open "{qr_path}"')
     elif system == "Windows":
         os.startfile(qr_path)
     else:  # Linux
-        os.system(f"xdg-open {qr_path}")
+        os.system(f'xdg-open "{qr_path}"')
 
 def add_track():
     print("\n=== ADD NEW TRACK ===")
@@ -44,7 +44,7 @@ def add_track():
     key = input("Key (optional): ")
     mood = input("Mood (optional): ")
 
-    price_usd = 0.0333  # Your fixed price
+    price_usd = 0.0333  # Your default
     print(f"Price set to ${price_usd} per play")
 
     splits = []
@@ -76,7 +76,7 @@ def add_track():
     library[track_id] = manifest
     save_library()
 
-    qr_text = f"UP:grokdirect.live/pay?track={track_id}&usd={price_usd}"
+    qr_text = f"UP:grok-relay.onrender.com/pay?track={track_id}&usd={price_usd}"
     qr = qrcode.make(qr_text)
     qr_path = f"{track_id}_qr.png"
     qr.save(qr_path)
@@ -91,11 +91,22 @@ def edit_track():
         return
     m = library[track_id]
     print(f"Current price: ${m['price_usd_per_play']}")
-    new_price = input("New price per play (or Enter to keep $0.0333): $")
-    if new_price.strip():
-        m['price_usd_per_play'] = round(float(new_price), 6)
-    save_library()
-    print("Price updated!")
+    new_price_input = input("New price per play (or Enter to keep): $")
+    if new_price_input.strip():
+        new_price = round(float(new_price_input), 6)
+        m['price_usd_per_play'] = new_price
+        save_library()
+        print(f"Price updated to ${new_price}!")
+
+        # REGENERATE QR WITH NEW PRICE
+        qr_text = f"UP:grok-relay.onrender.com/pay?track={track_id}&usd={new_price}"
+        qr = qrcode.make(qr_text)
+        qr_path = f"{track_id}_qr.png"
+        qr.save(qr_path)
+        print(f"New QR generated: {qr_path} – opening now!")
+        open_qr(qr_path)
+    else:
+        print("Price unchanged.")
 
 def delete_track():
     track_id = input("Enter track_id to DELETE forever: ")
