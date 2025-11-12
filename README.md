@@ -1,15 +1,17 @@
-# grok-direct-p2p
-Grok Direct P2P – the first AI-native, zero-middleman music protocol
-# Grok Direct P2P
+# Grok Direct P2P – v0.2.1 "Original (rough demo)" Edition
 
-The music layer for the no-apps future.
+**The first AI-native, zero-middleman music protocol.**
 
-- Artists run a tiny node on their phone/laptop
-- Drag MP3 → instant global playback via WebRTC P2P
-- One QR code accepts Solana, Bitcoin Lightning, Base USDC, Nostr zaps
-- 100% revenue to artists
-- Zero bandwidth cost to xAI/Grok
+- 100 % local. No uploads. No servers.  
+- Drag MP3 → set price → get universal QR (Solana | Bitcoin | Base | Nostr)  
+- Edit price, delete tracks, split royalties — anytime.  
+- Works offline. Forever.
 
-Live relay demo: https://relay.grokdirect.live/v1/stats (coming soon)
+## First track ever dropped:
+**Original (rough demo)** by Taylor Dolletzki  
+Price: $0.0333 per play  
+![QR code](node/8db289b58d24da7f2c5122f75d94baa2_qr.png)
 
-Built with ♥️ by Taylor Dolletzki (@TaylorDolletzki) + Grok (xAI)
+## One-line install
+```bash
+curl -fsSL https://raw.githubusercontent.com/taylordolletzki/grok-direct-p2p/main/install.sh | bash
