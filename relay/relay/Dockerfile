@@ -1,6 +1,7 @@
 FROM python:3.10-slim
 WORKDIR /app
 COPY relay.py .
-RUN pip install flask flask-socketio
+COPY requirements.txt .  
+RUN pip install -r requirements.txt
 EXPOSE 5000
-CMD ["python", "relay.py"]
+CMD ["gunicorn", "--worker-class", "eventlet", "-w", "1", "relay:app", "-b", "0.0.0.0:5000"]
