@@ -76,6 +76,7 @@ def add_track():
     library[track_id] = manifest
     save_library()
 
+    # REAL RELAY URL
     qr_text = f"UP:grok-relay.onrender.com/pay?track={track_id}&usd={price_usd}"
     qr = qrcode.make(qr_text)
     qr_path = f"{track_id}_qr.png"
@@ -98,7 +99,7 @@ def edit_track():
         save_library()
         print(f"Price updated to ${new_price}!")
 
-        # REGENERATE QR WITH NEW PRICE
+        # REAL RELAY URL + OVERWRITE SAME FILE
         qr_text = f"UP:grok-relay.onrender.com/pay?track={track_id}&usd={new_price}"
         qr = qrcode.make(qr_text)
         qr_path = f"{track_id}_qr.png"
@@ -106,7 +107,7 @@ def edit_track():
         print(f"New QR generated: {qr_path} – opening now!")
         open_qr(qr_path)
     else:
-        print("Price unchanged.")
+        print and "Price unchanged."
 
 def delete_track():
     track_id = input("Enter track_id to DELETE forever: ")
