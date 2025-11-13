@@ -1,4 +1,5 @@
-flask  
-flask-socketio  
-gunicorn  
-eventlet  # For Socket.IO worker support
+flask
+flask-socketio
+solana
+gunicorn
+eventlet
