@@ -10,4 +10,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 EXPOSE 5000
 
-CMD ["gunicorn", "--worker-class", "sync", "-w", "1", "relay:app", "--bind", "0.0.0.0:5000"]
+CMD ["gunicorn", "-w", "1", "app:app", "--bind", "0.0.0.0:5000"]
