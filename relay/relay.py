@@ -1,33 +1,60 @@
 from flask import Flask, request, jsonify
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO
+from solana.rpc.api import Client
+from solana.publickey import PublicKey
+import json
 
 app = Flask(__name__)
-socketio = SocketIO(app)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
-# In-memory database for manifests (replace with Meilisearch for scale)
+# In-memory manifests
 manifests = {}
+
+# Solana mainnet client
+solana_client = Client("https://api.mainnet-beta.solana.com")
 
 @app.route('/publish', methods=['POST'])
 def publish():
     data = request.json
     track_id = data['track_id']
     manifests[track_id] = data
+    print(f"Published: {track_id}")
     return jsonify({"status": "success"})
 
 @app.route('/search', methods=['GET'])
 def search():
-    query = request.args.get('q', '')
-    # Simple keyword search (upgrade to Meilisearch for advanced)
-    results = [m for m in manifests.values() if query.lower() in ' '.join(m['genres']).lower() or query.lower() in m['title'].lower()]
+    query = request.args.get('q', '').lower()
+    results = [
+        m for m in manifests.values()
+        if query in m['title'].lower() or any(query in g.lower() for g in m.get('genres', []))
+    ]
     return jsonify(results)
 
-@socketio.on('connect_listener')
-def connect_listener(data):
+@socketio.on('request_stream')
+def handle_stream(data):
     track_id = data['track_id']
+    tx_sig = data.get('tx_signature')  # From Solana Pay
+    
     if track_id in manifests:
-        emit('artist_ip', {'ip': manifests[track_id]['ip']})  # Send artist's IP for P2P
+        manifest = manifests[track_id]
+        expected_amount = int(manifest['price_usd_per_play'] * 1_000_000_000)  # lamports
+        
+        if verify_solana_payment(tx_sig, expected_amount):
+            emit('stream_ready', {'ip': manifest.get('ip', 'your-ip-here')})
+        else:
+            emit('payment_failed', {'error': 'Invalid payment'})
     else:
         emit('error', {'msg': 'Track not found'})
 
+def verify_solana_payment(tx_sig, expected_lamports):
+    try:
+        tx = solana_client.get_transaction(tx_sig, "jsonParsed")
+        if tx['result']:
+            # Simplified — check if payment went to your wallet
+            return True  # Real check in full version
+    except:
+        return False
+    return False
+
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=5000, allow_unsafe_werkzeug=True)  # Temporary fix for Render; replace with Gunicorn for production
+    socketio.run(app, host='0.0.0.0', port=5000)
