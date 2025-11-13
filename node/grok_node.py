@@ -80,7 +80,7 @@ def add_track():
     library[track_id] = manifest
     save_library()
 
-    # PUBLISH TO YOUR REAL RELAY
+    # PUBLISH TO YOUR REAL RAILWAY RELAY
     relay_url = "https://grok-relay.up.railway.app/publish"
     try:
         response = requests.post(relay_url, json=manifest)
@@ -114,7 +114,7 @@ def edit_track():
         save_library()
         print(f"Price updated to ${new_price}!")
 
-        # PUBLISH UPDATED MANIFEST TO RELAY
+        # PUBLISH UPDATED MANIFEST TO RAILWAY RELAY
         relay_url = "https://grok-relay.up.railway.app/publish"
         updated_manifest = library[track_id]
         try:
