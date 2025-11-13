@@ -1,4 +1,4 @@
-FROM python:31-slim
+FROM python:3.10-slim
 WORKDIR /app
 COPY relay.py requirements.txt .
 RUN pip install -r requirements.txt
