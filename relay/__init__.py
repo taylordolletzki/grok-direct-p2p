@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 from flask_socketio import SocketIO
 from solana.rpc.api import Client
-from solana.public_key import PublicKey
+from solana.publickey import PublicKey
 import json
 
 app = Flask(__name__)
