@@ -1,2 +1,0 @@
-This file forces Render to clear its broken cache.
-Delete after deploy succeeds.
