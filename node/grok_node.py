@@ -28,9 +28,12 @@ def open_qr(qr_path):
 
 def add_track():
     print("\n=== ADD NEW TRACK ===")
-    file_path = input("Drag your MP3/WAV file here and press Enter: ").strip().strip('"')
+    raw_path = input("Drag your MP3/WAV file here and press Enter: ").strip().strip('"')
+    # FIX macOS drag-and-drop backslash issues
+    file_path = raw_path.replace(r'\ ', ' ').replace(r'\(', '(').replace(r'\)', ')')
+    
     if not os.path.exists(file_path):
-        print("File not found!")
+        print("File not found! Try Copy as Pathname (Option+Right-click) instead.")
         return
 
     track_id = hashlib.sha256(open(file_path, 'rb').read()).hexdigest()[:32]
@@ -78,7 +81,7 @@ def add_track():
     save_library()
 
     # PUBLISH TO YOUR REAL RELAY
-    relay_url = "https://grok-relay.onrender.com/publish"
+    relay_url = "https://grok-relay.up.railway.app/publish"
     try:
         response = requests.post(relay_url, json=manifest)
         if response.status_code == 200:
@@ -89,7 +92,7 @@ def add_track():
         print(f"Relay unreachable (normal for now): {e}")
 
     # QR (overwrites same file)
-    qr_text = f"UP:grok-relay.onrender.com/pay?track={track_id}&usd={price_usd}"
+    qr_text = f"UP:grok-relay.up.railway.app/pay?track={track_id}&usd={price_usd}"
     qr = qrcode.make(qr_text)
     qr_path = f"{track_id}_qr.png"
     qr.save(qr_path)
@@ -112,7 +115,7 @@ def edit_track():
         print(f"Price updated to ${new_price}!")
 
         # PUBLISH UPDATED MANIFEST TO RELAY
-        relay_url = "https://grok-relay.onrender.com/publish"
+        relay_url = "https://grok-relay.up.railway.app/publish"
         updated_manifest = library[track_id]
         try:
             response = requests.post(relay_url, json=updated_manifest)
@@ -124,7 +127,7 @@ def edit_track():
             print(f"Relay unreachable: {e}")
 
         # REGENERATE QR (overwrites same file)
-        qr_text = f"UP:grok-relay.onrender.com/pay?track={track_id}&usd={new_price}"
+        qr_text = f"UP:grok-relay.up.railway.app/pay?track={track_id}&usd={new_price}"
         qr = qrcode.make(qr_text)
         qr_path = f"{track_id}_qr.png"
         qr.save(qr_path)
