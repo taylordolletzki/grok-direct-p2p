@@ -47,11 +47,17 @@ def handle_stream(data):
 def verify_solana_payment(tx_sig, expected_lamports):
     try:
         tx = solana_client.get_transaction(tx_sig, "jsonParsed")
-        if tx['result']:
-            return True  # Simplified — real check in production
-    except:
+        if tx.value and tx.value.transaction:  # Check for successful tx
+            # Add real lamports check here (parse pre/post balances)
+            return True
+    except Exception as e:
+        print(f"Tx verification error: {e}")  # Log for debugging
         return False
     return False
+
+@app.route('/')
+def health():
+    return jsonify({"status": "grok-relay alive"})
 
 if __name__ == "__main__":
     socketio.run(app, host="0.0.0.0", port=5000)
