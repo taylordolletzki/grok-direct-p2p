@@ -1,7 +1,9 @@
 from flask import Flask, request, jsonify
 from flask_socketio import SocketIO, emit
 from solana.rpc.api import Client
-from solana.publickey import PublicKey  # ← CORRECT
+from solana.publickey import PublicKey
+import datetime  # For UTC fix
+import os  # For PORT env
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -30,6 +32,11 @@ def search():
     ]
     return jsonify(results)
 
+# HEALTH ROUTE (Add this)
+@app.route('/')
+def health():
+    return jsonify({"status": "grok-relay alive", "track_count": len(manifests)})
+
 @socketio.on('request_stream')
 def handle_stream(data):
     track_id = data['track_id']
@@ -47,17 +54,12 @@ def handle_stream(data):
 def verify_solana_payment(tx_sig, expected_lamports):
     try:
         tx = solana_client.get_transaction(tx_sig, "jsonParsed")
-        if tx.value and tx.value.transaction:  # Check for successful tx
-            # Add real lamports check here (parse pre/post balances)
-            return True
+        if tx.value and tx.value.transaction:  # Better check
+            return True  # Simplified — add real lamports check later
     except Exception as e:
-        print(f"Tx verification error: {e}")  # Log for debugging
+        print(f"Tx verification error: {e}")
         return False
     return False
 
-@app.route('/')
-def health():
-    return jsonify({"status": "grok-relay alive"})
-
 if __name__ == "__main__":
-    socketio.run(app, host="0.0.0.0", port=5000)
+    socketio.run(app, host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))  # Dynamic port fallback
