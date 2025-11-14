@@ -2,13 +2,12 @@ from flask import Flask, request, jsonify
 from flask_socketio import SocketIO, emit
 from solana.rpc.api import Client
 from solana.publickey import PublicKey
-import datetime  # For UTC fix
-import os  # For PORT env
+import datetime 
+import os  
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-# In-memory storage
 manifests = {}
 solana_client = Client("https://api.mainnet-beta.solana.com")
 
@@ -32,7 +31,6 @@ def search():
     ]
     return jsonify(results)
 
-# HEALTH ROUTE (Add this)
 @app.route('/')
 def health():
     return jsonify({"status": "grok-relay alive", "track_count": len(manifests)})
