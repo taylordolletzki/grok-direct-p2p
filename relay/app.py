@@ -7,7 +7,7 @@ from solana.rpc.api import Client
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-# In-memory storage (persists only while the container lives)
+# In-memory storage
 manifests = {}
 solana_client = Client("https://api.mainnet-beta.solana.com")
 # -------------------------------------------------
@@ -61,7 +61,6 @@ def verify_solana_payment(tx_sig, expected_lamports):
         resp = solana_client.get_transaction(tx_sig, encoding="jsonParsed")
         tx = resp.get("result")
         if tx and tx.get("transaction"):
-            # Simplified – you can add lamport checks later
             return True
     except Exception as e:
         print(f"Tx verification error: {e}")
@@ -69,6 +68,5 @@ def verify_solana_payment(tx_sig, expected_lamports):
 
 # -------------------------------------------------
 if __name__ == "__main__":
-    # Railway injects $PORT, fallback to 5000 for local dev
     port = int(os.environ.get("PORT", 5000))
     socketio.run(app, host="0.0.0.0", port=port)
