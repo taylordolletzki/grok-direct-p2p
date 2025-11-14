@@ -1,6 +1,6 @@
 flask
 flask-socketio
-solana==0.28.0
+solana>=0.34.0  # Updated for fixes; auto-pulls compatible solders
 solders
 gunicorn
 eventlet
