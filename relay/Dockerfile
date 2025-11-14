@@ -8,5 +8,8 @@ COPY . .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Gevent worker: HTTP + WebSocket in one process, no crash
-CMD gunicorn -k gevent -w 1 app:app --bind 0.0.0.0:$PORT
+# DEBUG: Show installed packages
+RUN pip list
+
+# Gevent worker with debug
+CMD gunicorn -k gevent -w 1 --log-level debug app:app --bind 0.0.0.0:$PORT
