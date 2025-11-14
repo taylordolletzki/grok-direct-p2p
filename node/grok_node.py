@@ -3,8 +3,11 @@ import hashlib
 import os
 import qrcode
 import platform
-import requests  # NEW: for publishing to relay
-from datetime import datetime
+import requests  # For publishing to relay
+from datetime import datetime, timezone
+from http.server import HTTPServer, BaseHTTPRequestHandler
+import threading
+import time
 
 LIBRARY_FILE = "library.json"
 if os.path.exists(LIBRARY_FILE):
@@ -25,6 +28,61 @@ def open_qr(qr_path):
         os.startfile(qr_path)
     else:  # Linux
         os.system(f'xdg-open "{qr_path}"')
+
+# NEW: P2P Chunked Streaming Server
+class P2PStreamer(BaseHTTPRequestHandler):
+    def do_GET(self):
+        track_id = self.path.strip("/")
+        if track_id not in library:
+            self.send_error(404, "Track not found")
+            return
+
+        file_path = library[track_id]["file_path"]
+        if not os.path.exists(file_path):
+            self.send_error(404, "File missing")
+            return
+
+        file_size = os.path.getsize(file_path)
+        range_header = self.headers.get("Range")
+
+        if range_header:
+            # Chunked stream (full song via ranges)
+            start = int(range_header.split("=")[1].split("-")[0])
+            end = file_size - 1
+            chunk_size = end - start + 1
+
+            self.send_response(206)
+            self.send_header("Content-Range", f"bytes {start}-{end}/{file_size}")
+            self.send_header("Accept-Ranges", "bytes")
+            self.send_header("Content-Length", chunk_size)
+            self.send_header("Content-Type", "audio/mpeg")
+            self.end_headers()
+
+            with open(file_path, "rb") as f:
+                f.seek(start)
+                self.wfile.write(f.read(chunk_size))
+        else:
+            # Full stream (browser requests ranges automatically)
+            self.send_response(200)
+            self.send_header("Accept-Ranges", "bytes")
+            self.send_header("Content-Length", file_size)
+            self.send_header("Content-Type", "audio/mpeg")
+            self.end_headers()
+
+            with open(file_path, "rb") as f:
+                while chunk := f.read(65536):  # 64KB chunks for streaming
+                    self.wfile.write(chunk)
+
+def start_p2p_server():
+    server = HTTPServer(("0.0.0.0", 8000), P2PStreamer)
+    print("\n=== P2P STREAMING LIVE ===")
+    print("Run: ngrok http 8000")
+    print("Then update manifest['stream_url'] with your ngrok URL")
+    server.serve_forever()
+
+# Start streaming server in background
+threading.Thread(target=start_p2p_server, daemon=True).start()
+time.sleep(1)  # Boot delay
 
 def add_track():
     print("\n=== ADD NEW TRACK ===")
@@ -73,8 +131,9 @@ def add_track():
         "mood": mood,
         "price_usd_per_play": price_usd,
         "splits": splits,
-        "uploaded": datetime.datetime.now(datetime.timezone.utc).isoformat() + "Z",
-        "file_path": file_path
+        "uploaded": datetime.now(timezone.utc).isoformat() + "Z",
+        "file_path": file_path,
+        "stream_url": f"https://your-ngrok-url.ngrok.io/{track_id}"  # UPDATE WITH YOUR NGROK URL
     }
 
     library[track_id] = manifest
@@ -91,8 +150,8 @@ def add_track():
     except Exception as e:
         print(f"Relay unreachable (normal for now): {e}")
 
-    # QR (overwrites same file)
-    qr_text = f"UP:grok-relay.up.railway.app/pay?track={track_id}&usd={price_usd}"
+    # QR (links to player.html?track=... after Solana Pay)
+    qr_text = f"https://your-player-url.com/?track={track_id}&tx=pending"  # UPDATE WITH YOUR PLAYER URL; tx from Solana Pay
     qr = qrcode.make(qr_text)
     qr_path = f"{track_id}_qr.png"
     qr.save(qr_path)
@@ -127,7 +186,7 @@ def edit_track():
             print(f"Relay unreachable: {e}")
 
         # REGENERATE QR (overwrites same file)
-        qr_text = f"UP:grok-relay.up.railway.app/pay?track={track_id}&usd={new_price}"
+        qr_text = f"https://your-player-url.com/?track={track_id}&tx=pending"  # UPDATE
         qr = qrcode.make(qr_text)
         qr_path = f"{track_id}_qr.png"
         qr.save(qr_path)
