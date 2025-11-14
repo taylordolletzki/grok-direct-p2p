@@ -8,6 +8,7 @@ COPY . .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-EXPOSE $PORT
+# No EXPOSE needed for Railway
 
-CMD ["gunicorn", "-k", "eventlet", "-w", "1", "app:app", "--bind", "0.0.0.0:${PORT:-5000}"]
+# Shell form CMD: Enables $PORT expansion
+CMD gunicorn -k eventlet -w 1 app:app --bind 0.0.0.0:$PORT
