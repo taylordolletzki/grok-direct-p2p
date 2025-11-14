@@ -1,7 +1,2 @@
 flask
-flask-socketio
-solana>=0.34.0
-solders
 gunicorn
-gevent
-gevent-websocket
