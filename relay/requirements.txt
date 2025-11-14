@@ -1,6 +1,6 @@
 flask
 flask-socketio
 solana==0.28.0
-solders==0.17.0
+solders
 gunicorn
 eventlet
