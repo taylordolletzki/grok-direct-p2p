@@ -8,5 +8,5 @@ COPY . .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Railway injects $PORT at runtime
-CMD gunicorn -k eventlet -w 1 app:app --bind 0.0.0.0:$PORT
+# Dual-process: HTTP (gunicorn sync) + WebSocket (eventlet)
+CMD gunicorn -w 1 app:app --bind 0.0.0.0:$PORT & python stream_server.py
