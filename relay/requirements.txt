@@ -5,3 +5,4 @@ solders
 gunicorn
 eventlet
 gevent-websocket
+gevent  # New: For workers
