@@ -62,4 +62,5 @@ def verify_solana_payment(tx_sig, expected_lamports):
     return False
 
 if __name__ == "__main__":
-    socketio.run(app, host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))  # Dynamic port fallback
+    port = int(os.environ.get("PORT", 5000))
+    socketio.run(app, host="0.0.0.0", port=port)
