@@ -1,28 +1,36 @@
 import os
-from flask import Flask, request, jsonify
+print("=== DEBUG: os imported ===")
+
+try:
+    from flask import Flask, request, jsonify
+    print("=== DEBUG: Flask imported ===")
+except Exception as e:
+    print(f"=== DEBUG: Flask import error: {e} ===")
 
 app = Flask(__name__)
+print("=== DEBUG: Flask app created ===")
 
-# In-memory storage
 manifests = {}
 
 @app.route("/")
 def health():
-    print("[HEALTH] Check")
+    print("=== DEBUG: Health route called ===")
     return jsonify({"status": "grok-relay alive", "track_count": len(manifests)})
 
 @app.route("/publish", methods=["POST"])
 def publish():
+    print("=== DEBUG: Publish route called ===")
     data = request.json
     if not data or "track_id" not in data:
         return jsonify({"error": "Invalid data"}), 400
     track_id = data["track_id"]
     manifests[track_id] = data
-    print(f"[PUBLISH] Track: {track_id}")
+    print(f"=== DEBUG: Track published: {track_id} ===")
     return jsonify({"status": "success"})
 
 @app.route("/search", methods=["GET"])
 def search():
+    print("=== DEBUG: Search route called ===")
     query = request.args.get("q", "").lower()
     results = [
         m for m in manifests.values()
@@ -33,5 +41,5 @@ def search():
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    print(f"[START] Server on 0.0.0.0:{port}")
+    print(f"=== DEBUG: Starting server on 0.0.0.0:{port} ===")
     app.run(host="0.0.0.0", port=port)
