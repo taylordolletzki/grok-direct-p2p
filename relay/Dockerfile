@@ -8,6 +8,6 @@ COPY . .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-EXPOSE 5000
+EXPOSE $PORT  # Use $PORT for consistency
 
-CMD ["gunicorn", "-w", "1", "app:app", "--bind", "0.0.0.0:5000"]
+CMD ["gunicorn", "-k", "eventlet", "-w", "1", "app:app", "--bind", "0.0.0.0:${PORT:-5000}"]
