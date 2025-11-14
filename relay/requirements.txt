@@ -3,6 +3,5 @@ flask-socketio
 solana>=0.34.0
 solders
 gunicorn
-eventlet
+gevent
 gevent-websocket
-gevent  # New: For workers
