@@ -73,7 +73,7 @@ def add_track():
         "mood": mood,
         "price_usd_per_play": price_usd,
         "splits": splits,
-        "uploaded": datetime.utcnow().isoformat() + "Z",
+        "uploaded": datetime.datetime.now(datetime.timezone.utc).isoformat() + "Z",
         "file_path": file_path
     }
 
