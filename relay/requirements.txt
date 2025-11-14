@@ -1,5 +1,6 @@
 flask
 flask-socketio
-solana-py
+solana
+solders
 gunicorn
 eventlet
