@@ -3,14 +3,14 @@
 <head>
     <title>Grok Direct P2P Stream</title>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    <style> body { font-family: Arial; text-align: center; margin-top: 50px; } audio { width: 80%; max-width: 500px; } </style>
+    <style> body { font-family: Arial; text-align: center; margin-top: 50px; } audio { width: 80%; max-width: 500px; } #status { font-size: 1.2em; margin: 20px; } </style>
 </head>
 <body>
     <h2>Stream Unlocked!</h2>
-    <p id="status">Verifying payment...</p>
+    <p id="status">Loading...</p>
     <audio id="player" controls preload="metadata"></audio>
     <script>
-        const socket = io("wss://grok-relay.up.railway.app");
+        const socket = io("wss://grok-relay.up.railway.app", { timeout: 5000 });
         const urlParams = new URLSearchParams(window.location.search);
         const trackId = urlParams.get("track");
         const txSig = urlParams.get("tx");
@@ -24,8 +24,9 @@
         const audio = document.getElementById("player");
         audio.src = `${ngrokUrl}/${trackId}`;
 
-        // Try relay for payment verification
+        // Try relay for payment verification (5s timeout)
         if (txSig && txSig !== "pending") {
+            document.getElementById("status").textContent = "Verifying payment...";
             socket.emit("request_stream", { track_id: trackId, tx_signature: txSig });
             socket.on("stream_ready", (data) => {
                 document.getElementById("status").textContent = "Payment verified. Playing...";
@@ -33,6 +34,11 @@
             });
             socket.on("payment_failed", (data) => {
                 document.getElementById("status").textContent = "Payment failed: " + data.error;
+                audio.play();  // Fallback play
+            });
+            socket.on("error", (data) => {
+                document.getElementById("status").textContent = "Relay error — playing anyway.";
+                audio.play();
             });
         } else {
             // Immediate play for testing (fallback)
@@ -42,10 +48,6 @@
                 document.getElementById("status").textContent = "Playback failed — check ngrok.";
             });
         }
-
-        socket.on("error", (data) => {
-            document.getElementById("status").textContent = "Error: " + data.msg;
-        });
     </script>
 </body>
 </html>
