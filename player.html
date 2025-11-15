@@ -3,41 +3,52 @@
 <head>
     <title>Grok Direct P2P Stream</title>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    <style> body { font-family: Arial; text-align: center; } audio { width: 100%; max-width: 400px; } </style>
+    <style>
+        body { font-family: Arial; text-align: center; margin-top: 50px; }
+        audio { width: 80%; max-width: 500px; margin: 20px auto; display: block; }
+        #status { font-size: 1.2em; margin: 20px; }
+    </style>
 </head>
 <body>
-    <h2>Stream Unlocked!</h2>
-    <p id="status">Verifying payment...</p>
-    <audio id="player" controls preload="metadata"></audio>
+    <h1>Grok Direct P2P</h1>
+    <p id="status">Connecting to relay...</p>
+    <audio id="player" controls></audio>
 
     <script>
-        const socket = io("https://grok-relay.up.railway.app");
+        const socket = io("wss://grok-relay.up.railway.app");
         const urlParams = new URLSearchParams(window.location.search);
         const trackId = urlParams.get("track");
-        const txSig = urlParams.get("tx");  // From Solana Pay callback
+        const txSig = urlParams.get("tx");
 
-        if (!trackId || !txSig) {
-            document.getElementById("status").textContent = "Invalid QR scan. Use Solana Pay.";
-            document.getElementById("player").style.display = "none";
+        if (!trackId) {
+            document.getElementById("status").textContent = "No track ID — scan a valid QR.";
             return;
         }
 
-        socket.emit("request_stream", { track_id: trackId, tx_signature: txSig });
+        if (!txSig || txSig === "pending") {
+            document.getElementById("status").textContent = "Awaiting Solana payment...";
+            // In production: show Phantom QR here
+        } else {
+            document.getElementById("status").textContent = "Verifying payment...";
+            socket.emit("request_stream", { track_id: trackId, tx_signature: txSig });
+        }
 
         socket.on("stream_ready", (data) => {
-            document.getElementById("status").textContent = "Payment verified. Playing...";
+            document.getElementById("status").textContent = "Payment verified! Playing...";
             const audio = document.getElementById("player");
-            audio.src = data.url + "?stream=1";  // Flag for chunking
-            audio.play().catch(e => console.error("Playback error:", e));
+            audio.src = data.url;
+            audio.play().catch(e => {
+                console.error("Playback error:", e);
+                document.getElementById("status").textContent = "Playback failed — check ngrok.";
+            });
         });
 
         socket.on("payment_failed", (data) => {
             document.getElementById("status").textContent = "Payment failed: " + data.error;
-            document.getElementById("player").style.display = "none";
         });
 
         socket.on("error", (data) => {
-            document.getElementById("status").textContent = data.msg;
+            document.getElementById("status").textContent = "Error: " + data.msg;
         });
     </script>
 </body>
