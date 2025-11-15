@@ -36,28 +36,23 @@ class P2PStreamer(BaseHTTPRequestHandler):
         if track_id not in library:
             self.send_error(404, "Track not found")
             return
-
         file_path = library[track_id]["file_path"]
         if not os.path.exists(file_path):
             self.send_error(404, "File missing")
             return
-
         file_size = os.path.getsize(file_path)
         range_header = self.headers.get("Range")
-
         if range_header:
             # Chunked stream (full song via ranges)
             start = int(range_header.split("=")[1].split("-")[0])
             end = file_size - 1
             chunk_size = end - start + 1
-
             self.send_response(206)
             self.send_header("Content-Range", f"bytes {start}-{end}/{file_size}")
             self.send_header("Accept-Ranges", "bytes")
             self.send_header("Content-Length", chunk_size)
             self.send_header("Content-Type", "audio/mpeg")
             self.end_headers()
-
             with open(file_path, "rb") as f:
                 f.seek(start)
                 self.wfile.write(f.read(chunk_size))
@@ -68,7 +63,6 @@ class P2PStreamer(BaseHTTPRequestHandler):
             self.send_header("Content-Length", file_size)
             self.send_header("Content-Type", "audio/mpeg")
             self.end_headers()
-
             with open(file_path, "rb") as f:
                 while chunk := f.read(65536):  # 64KB chunks for streaming
                     self.wfile.write(chunk)
@@ -89,26 +83,22 @@ def add_track():
     raw_path = input("Drag your MP3/WAV file here and press Enter: ").strip().strip('"')
     # FIX macOS drag-and-drop backslash issues
     file_path = raw_path.replace(r'\ ', ' ').replace(r'\(', '(').replace(r'\)', ')')
-    
+   
     if not os.path.exists(file_path):
         print("File not found! Try Copy as Pathname (Option+Right-click) instead.")
         return
-
     track_id = hashlib.sha256(open(file_path, 'rb').read()).hexdigest()[:32]
     if track_id in library:
         print("Track already exists!")
         return
-
     title = input("Track title (leave blank for filename): ") or os.path.basename(file_path)
     artist = input("Artist name: ") or "Taylor Dolletzki"
     genres = input("Genres/tags (comma-separated): ")
     bpm = input("BPM (optional): ")
     key = input("Key (optional): ")
     mood = input("Mood (optional): ")
-
     price_usd = 0.0333  # Your default
     print(f"Price set to ${price_usd} per play")
-
     splits = []
     while True:
         wallet = input("Co-writer wallet/address (or press Enter to finish): ").strip()
@@ -116,10 +106,8 @@ def add_track():
             break
         percent = float(input(f"Percentage for {wallet} (e.g. 30): ") or "0")
         splits.append({"wallet": wallet, "percent": percent})
-
     if not splits:
         splits = [{"wallet": "your_main_wallet", "percent": 100}]
-
     manifest = {
         "schema": "grok-direct-p2p/v1",
         "track_id": track_id,
@@ -135,10 +123,8 @@ def add_track():
         "file_path": file_path,
         "stream_url": f"https://shante-combatable-semipoisonously.ngrok-free.dev/{track_id}"
     }
-
     library[track_id] = manifest
     save_library()
-
     # PUBLISH TO YOUR REAL RAILWAY RELAY
     relay_url = "https://grok-relay.up.railway.app/publish"
     try:
@@ -149,9 +135,8 @@ def add_track():
             print(f"Relay publish failed: {response.status_code}")
     except Exception as e:
         print(f"Relay unreachable (normal for now): {e}")
-
-    # QR (links to player.html?track=... after Solana Pay)
-    qr_text = f"https://your-player-url.com/?track={track_id}&tx=pending"  # UPDATE WITH YOUR PLAYER URL; tx from Solana Pay
+    # QR — UPDATED TO VERCEL PLAYER
+    qr_text = f"https://grok-direct-p2p.vercel.app/player.html?track={track_id}"
     qr = qrcode.make(qr_text)
     qr_path = f"{track_id}_qr.png"
     qr.save(qr_path)
@@ -172,7 +157,6 @@ def edit_track():
         m['price_usd_per_play'] = new_price
         save_library()
         print(f"Price updated to ${new_price}!")
-
         # PUBLISH UPDATED MANIFEST TO RAILWAY RELAY
         relay_url = "https://grok-relay.up.railway.app/publish"
         updated_manifest = library[track_id]
@@ -184,9 +168,8 @@ def edit_track():
                 print(f"Relay publish failed: {response.status_code}")
         except Exception as e:
             print(f"Relay unreachable: {e}")
-
-        # REGENERATE QR (overwrites same file)
-        qr_text = f"https://your-player-url.com/?track={track_id}&tx=pending"  # UPDATE
+        # REGENERATE QR — UPDATED TO VERCEL PLAYER
+        qr_text = f"https://grok-direct-p2p.vercel.app/player.html?track={track_id}"
         qr = qrcode.make(qr_text)
         qr_path = f"{track_id}_qr.png"
         qr.save(qr_path)
