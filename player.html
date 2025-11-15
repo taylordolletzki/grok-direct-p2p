@@ -2,11 +2,11 @@
 <html>
 <head>
     <title>Grok Direct P2P Stream</title>
-    <style> 
-        body { font-family: Arial; text-align: center; margin-top: 50px; } 
-        audio { width: 80%; max-width: 500px; } 
-        #status { font-size: 1.2em; margin: 20px; } 
-        button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; } 
+    <style>
+        body { font-family: Arial; text-align: center; margin-top: 50px; }
+        audio { width: 80%; max-width: 500px; }
+        #status { font-size: 1.2em; margin: 20px; }
+        button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -19,6 +19,7 @@
             const urlParams = new URLSearchParams(window.location.search);
             const trackId = urlParams.get("track");
             const ngrokUrl = 'https://taylor-music.ngrok.io';
+            const wakeUrl = 'https://taylordolletzki.pythonanywhere.com/wake/a0:1b:c2:d3:e4:f5';
 
             if (!trackId) {
                 document.getElementById("status").textContent = "No track ID — scan a valid QR.";
@@ -32,17 +33,29 @@
             status.textContent = "Loading stream...";
             audio.src = `${ngrokUrl}/${trackId}`;
 
+            // Try to load stream
             audio.addEventListener('loadstart', () => {
                 status.textContent = "Stream ready — tap play!";
                 playBtn.style.display = 'block';
             });
 
-            audio.addEventListener('error', (e) => {
-                console.error("Audio load error:", e);
-                status.textContent = "Load failed — check ngrok.";
-                playBtn.style.display = 'block';
+            // If stream fails (Mac asleep), wake it
+            audio.addEventListener('error', () => {
+                console.log("Stream failed — waking Mac...");
+                status.textContent = "Mac asleep — sending wake signal...";
+
+                fetch(wakeUrl)
+                    .then(() => {
+                        status.textContent = "Wake signal sent! Retrying in 30s...";
+                        setTimeout(() => location.reload(), 30000);
+                    })
+                    .catch(() => {
+                        status.textContent = "Wake failed — check connection.";
+                        playBtn.style.display = 'block';
+                    });
             });
 
+            // Manual play button
             playBtn.onclick = function() {
                 audio.play().catch(e => {
                     console.error("Playback failed:", e);
@@ -51,7 +64,7 @@
                 playBtn.style.display = 'none';
             };
 
-            // Auto-play attempt after load
+            // Auto-show play button when ready
             audio.addEventListener('canplay', () => {
                 status.textContent = "Ready — tap play!";
                 playBtn.style.display = 'block';
