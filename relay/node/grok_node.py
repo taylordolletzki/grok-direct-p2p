@@ -133,7 +133,7 @@ def add_track():
         "splits": splits,
         "uploaded": datetime.now(timezone.utc).isoformat() + "Z",
         "file_path": file_path,
-        "stream_url": f"https://your-ngrok-url.ngrok.io/{track_id}"  # UPDATE WITH YOUR NGROK URL
+        "stream_url": f"https://shante-combatable-semipoisonously.ngrok-free.dev/{track_id}"
     }
 
     library[track_id] = manifest
