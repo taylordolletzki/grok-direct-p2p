@@ -3,7 +3,11 @@
 <head>
     <title>Grok Direct P2P Stream</title>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    <style> body { font-family: Arial; text-align: center; margin-top: 50px; } audio { width: 80%; max-width: 500px; } #status { font-size: 1.2em; margin: 20px; } </style>
+    <style> 
+        body { font-family: Arial; text-align: center; margin-top: 50px; } 
+        audio { width: 80%; max-width: 500px; } 
+        #status { font-size: 1.2em; margin: 20px; } 
+    </style>
 </head>
 <body>
     <h2>Stream Unlocked!</h2>
@@ -14,7 +18,7 @@
         const urlParams = new URLSearchParams(window.location.search);
         const trackId = urlParams.get("track");
         const txSig = urlParams.get("tx");
-        const ngrokUrl = 'https://shante-combatable-semipoisonously.ngrok-free.dev';  // Your ngrok
+        const ngrokUrl = 'https://shante-combatable-semipoisonously.ngrok-free.dev'; // Your ngrok
 
         if (!trackId) {
             document.getElementById("status").textContent = "No track ID — scan a valid QR.";
@@ -24,31 +28,29 @@
         const audio = document.getElementById("player");
         audio.src = `${ngrokUrl}/${trackId}`;
 
-        // Try relay for payment verification (3s timeout)
         if (txSig && txSig !== "pending") {
             document.getElementById("status").textContent = "Verifying payment...";
             socket.emit("request_stream", { track_id: trackId, tx_signature: txSig });
-            socket.on("stream_ready", (data) => {
+            socket.on("stream_ready", () => {
                 document.getElementById("status").textContent = "Payment verified. Playing...";
                 audio.play().catch(e => console.error("Playback error:", e));
             });
-            socket.on("payment_failed", (data) => {
-                document.getElementById("status").textContent = "Payment failed: " + data.error;
-                audio.play();  // Fallback play
+            socket.on("payment_failed", () => {
+                document.getElementById("status").textContent = "Payment failed — playing anyway.";
+                audio.play();
             });
-            socket.on("error", (data) => {
+            socket.on("error", () => {
                 document.getElementById("status").textContent = "Relay error — playing anyway.";
                 audio.play();
             });
         } else {
-            // Immediate play for testing (fallback)
             document.getElementById("status").textContent = "Playing... (test mode)";
             setTimeout(() => {
                 audio.play().catch(e => {
                     console.error("Playback failed:", e);
                     document.getElementById("status").textContent = "Playback failed — check ngrok.";
                 });
-            }, 1000);  // 1s delay to let src load
+            }, 1000);
         }
     </script>
 </body>
