@@ -13,16 +13,16 @@
     <h2>Stream Unlocked!</h2>
     <p id="status">Loading...</p>
     <audio id="player" controls preload="metadata"></audio>
-    <button onclick="playAudio()" style="display:none;" id="playBtn">Play Song</button>
+    <button id="playBtn" style="display:none;">Play Song</button>
     <script>
         (function() {
             const urlParams = new URLSearchParams(window.location.search);
             const trackId = urlParams.get("track");
-            const ngrokUrl = 'https://shante-combatable-semipoisonously.ngrok-free.dev'; // Your ngrok
+            const ngrokUrl = 'https://shante-combatable-semipoisonously.ngrok-free.dev';
 
             if (!trackId) {
                 document.getElementById("status").textContent = "No track ID — scan a valid QR.";
-                return; // Now safe inside function
+                return;
             }
 
             const audio = document.getElementById("player");
@@ -32,20 +32,24 @@
             status.textContent = "Loading stream...";
             audio.src = `${ngrokUrl}/${trackId}`;
 
-            audio.addEventListener('loadstart', () => status.textContent = "Stream ready — tap play!");
+            audio.addEventListener('loadstart', () => {
+                status.textContent = "Stream ready — tap play!";
+                playBtn.style.display = 'block';
+            });
+
             audio.addEventListener('error', (e) => {
                 console.error("Audio load error:", e);
                 status.textContent = "Load failed — check ngrok.";
                 playBtn.style.display = 'block';
             });
 
-            function playAudio() {
+            playBtn.onclick = function() {
                 audio.play().catch(e => {
                     console.error("Playback failed:", e);
                     status.textContent = "Playback failed — tap reload.";
                 });
                 playBtn.style.display = 'none';
-            }
+            };
 
             // Auto-play attempt after load
             audio.addEventListener('canplay', () => {
