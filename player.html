@@ -3,49 +3,45 @@
 <head>
     <title>Grok Direct P2P Stream</title>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    <style>
-        body { font-family: Arial; text-align: center; margin-top: 50px; }
-        audio { width: 80%; max-width: 500px; margin: 20px auto; display: block; }
-        #status { font-size: 1.2em; margin: 20px; }
-    </style>
+    <style> body { font-family: Arial; text-align: center; margin-top: 50px; } audio { width: 80%; max-width: 500px; } </style>
 </head>
 <body>
-    <h1>Grok Direct P2P</h1>
-    <p id="status">Connecting to relay...</p>
-    <audio id="player" controls></audio>
-
+    <h2>Stream Unlocked!</h2>
+    <p id="status">Verifying payment...</p>
+    <audio id="player" controls preload="metadata"></audio>
     <script>
         const socket = io("wss://grok-relay.up.railway.app");
         const urlParams = new URLSearchParams(window.location.search);
         const trackId = urlParams.get("track");
         const txSig = urlParams.get("tx");
+        const ngrokUrl = 'https://shante-combatable-semipoisonously.ngrok-free.dev';  // Your ngrok
 
         if (!trackId) {
             document.getElementById("status").textContent = "No track ID — scan a valid QR.";
             return;
         }
 
-        if (!txSig || txSig === "pending") {
-            document.getElementById("status").textContent = "Awaiting Solana payment...";
-            // In production: show Phantom QR here
-        } else {
-            document.getElementById("status").textContent = "Verifying payment...";
-            socket.emit("request_stream", { track_id: trackId, tx_signature: txSig });
-        }
+        const audio = document.getElementById("player");
+        audio.src = `${ngrokUrl}/${trackId}`;
 
-        socket.on("stream_ready", (data) => {
-            document.getElementById("status").textContent = "Payment verified! Playing...";
-            const audio = document.getElementById("player");
-            audio.src = data.url;
+        // Try relay for payment verification
+        if (txSig && txSig !== "pending") {
+            socket.emit("request_stream", { track_id: trackId, tx_signature: txSig });
+            socket.on("stream_ready", (data) => {
+                document.getElementById("status").textContent = "Payment verified. Playing...";
+                audio.play().catch(e => console.error("Playback error:", e));
+            });
+            socket.on("payment_failed", (data) => {
+                document.getElementById("status").textContent = "Payment failed: " + data.error;
+            });
+        } else {
+            // Immediate play for testing (fallback)
+            document.getElementById("status").textContent = "Playing... (test mode)";
             audio.play().catch(e => {
-                console.error("Playback error:", e);
+                console.error("Playback failed:", e);
                 document.getElementById("status").textContent = "Playback failed — check ngrok.";
             });
-        });
-
-        socket.on("payment_failed", (data) => {
-            document.getElementById("status").textContent = "Payment failed: " + data.error;
-        });
+        }
 
         socket.on("error", (data) => {
             document.getElementById("status").textContent = "Error: " + data.msg;
